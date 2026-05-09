@@ -30,7 +30,7 @@ Claude:    Asks 2 questions → analyzes your Figma design system
 
 ```bash
 mkdir -p ~/.claude/commands && curl -o ~/.claude/commands/build-website.md \
-  https://raw.githubusercontent.com/shahilkhan/claude-build-website/main/build-website.md
+  https://raw.githubusercontent.com/shahil-kv/claude-build-website/main/build-website.md
 ```
 
 Then **restart Claude Code** (or open a new session). Type `/build` and you'll see it in the autocomplete.
@@ -38,7 +38,7 @@ Then **restart Claude Code** (or open a new session). Type `/build` and you'll s
 > **Project-level install** (for teams — no curl needed per person):
 > ```bash
 > mkdir -p .claude/commands && curl -o .claude/commands/build-website.md \
->   https://raw.githubusercontent.com/shahilkhan/claude-build-website/main/build-website.md
+>   https://raw.githubusercontent.com/shahil-kv/claude-build-website/main/build-website.md
 > git add .claude/commands/build-website.md && git commit -m "add build-website skill"
 > ```
 > Anyone who clones the repo and opens Claude Code gets `/build-website` automatically.
