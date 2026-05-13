@@ -18,7 +18,7 @@ Claude:    Asks 2 questions → analyzes your Figma design system
 ```
 
 **End result every time:**
-- A full Next.js 16 + Tailwind v4 + shadcn/ui landing page
+- A full Next.js 15 + Tailwind v4 + shadcn/ui landing page
 - All brand colors wired to CSS variables (zero hardcoded hex)
 - Live on Vercel with a production URL
 - Pixel-perfect capture in your Figma file
@@ -69,10 +69,12 @@ You need **all five** of these before the command will work end-to-end. Missing 
 
 ### 3. Vercel MCP Server connected
 - Open Claude Code → Settings → MCP Servers → Add Server
-- Type: `Streamable HTTP`  
+- Type: `Streamable HTTP`
 - URL: `https://mcp.vercel.com/mcp`
 - ID: `vercel`
 - You must have a Vercel account: https://vercel.com/signup (free tier works)
+
+> **Tip:** With Vercel MCP connected, Step 6 can use the `deploy_to_vercel` MCP tool directly as an alternative to the Vercel CLI — useful if you prefer not to install the CLI globally.
 
 ### 4. GitHub CLI (`gh`) installed and authenticated
 ```bash
@@ -88,11 +90,28 @@ gh auth login
 ```
 The skill uses `gh repo create` to create your GitHub repo. The GitHub MCP alternative often lacks the right token scope, so `gh` CLI is the reliable path.
 
+> Verify auth before starting: `gh auth status`
+
 ### 5. Node.js 18+ and Git
 ```bash
 node --version   # should be v18 or higher
 git --version    # any recent version
 ```
+
+---
+
+## Preflight Check
+
+Run these before starting to avoid failures mid-way:
+
+```bash
+gh auth status          # must show "Logged in to github.com"
+node --version          # must be v18+
+git --version           # any version
+npx vercel whoami       # must show your Vercel username
+```
+
+If any command fails, fix it before running `/build-website`.
 
 ---
 
@@ -182,7 +201,7 @@ Every site built with this skill uses:
 
 | Layer | Choice | Why |
 |-------|--------|-----|
-| Framework | Next.js 16 App Router | Latest, Vercel-native |
+| Framework | Next.js 15 App Router | Latest stable, Vercel-native |
 | Styling | Tailwind CSS v4 | Zero config, utility-first |
 | Components | shadcn/ui | Accessible, copy-paste, design-system-ready |
 | Fonts | Google Fonts via `next/font` | Zero layout shift |
@@ -208,7 +227,10 @@ Every site built with this skill uses:
 → Run `gh auth login` and re-authenticate. Make sure you choose "repo" scope.
 
 **Vercel deployment fails: "token not valid"**
-→ Run `npx vercel login` in the project directory, then retry.
+→ Run `npx vercel login` in the project directory, then retry. Or use the Vercel MCP `deploy_to_vercel` tool as an alternative.
+
+**`npm run build` fails with TypeScript errors**
+→ Fix all TypeScript errors before proceeding — do not skip build verification. Common causes: missing type imports, unresolved shadcn components. Run `npm run build` again after each fix.
 
 **Sync script fails: "FIGMA_TOKEN is not set"**
 → Add `FIGMA_TOKEN` as a GitHub secret (see Prerequisites → Figma Personal Access Token above).
@@ -219,6 +241,9 @@ Every site built with this skill uses:
 **Build error: `Cannot find module 'tw-animate-css'`**
 → Run `npm install tw-animate-css` in your project.
 
+**`npx vercel whoami` fails before starting**
+→ Run `npx vercel login` first, then retry the preflight check.
+
 ---
 
 ## Limitations
@@ -227,6 +252,7 @@ Every site built with this skill uses:
 - The Figma sync only patches CSS color/spacing variables — it does not sync component structure, animations, or layout changes.
 - Requires the five prerequisites above. If your org blocks GitHub CLI or Vercel, the deploy steps will need manual intervention.
 - Image assets in Figma are not synced to code (only color tokens and spacing values).
+- The Figma capture in Step 7 uses `get_screenshot` — it captures a visual snapshot, not an editable component tree.
 
 ---
 

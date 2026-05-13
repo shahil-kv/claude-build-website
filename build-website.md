@@ -18,7 +18,27 @@ Before writing any code, ask the user **two questions** (both required):
    - If the user does not have one yet, use the Shadcn UI community design system as default:
      `https://www.figma.com/design/0fAHdmB6vJsyoGbSFmjm61/-shadcn-ui---Design-System--Community-?node-id=2-287`
 
-Do NOT proceed to Step 1 until both answers are collected.
+Do NOT proceed to Step 0.5 until both answers are collected.
+
+---
+
+## Step 0.5: Preflight Check
+
+Before writing any code, verify all required tools are available and authenticated:
+
+```bash
+gh auth status          # must show "Logged in to github.com"
+node --version          # must be v18 or higher
+git --version           # any version
+npx vercel whoami       # must show Vercel username
+```
+
+If any check fails, surface the exact fix to the user before proceeding:
+- `gh auth status` fails → `gh auth login`
+- `node --version` < 18 → ask user to upgrade Node.js at https://nodejs.org
+- `npx vercel whoami` fails → `npx vercel login`
+
+Do NOT proceed to Step 1 until all checks pass.
 
 ---
 
@@ -186,7 +206,12 @@ Write the three files from Step 3, then verify it builds:
 npm run build
 ```
 
-Fix any TypeScript or build errors before proceeding.
+**If `npm run build` fails:** fix all TypeScript and module errors before proceeding. Common causes:
+- Missing shadcn component: run `npx shadcn@latest add [component-name]`
+- Missing type import: add the import at the top of the file
+- `Cannot find module 'tw-animate-css'`: run `npm install tw-animate-css`
+
+Only move to Step 5 once `npm run build` exits with no errors.
 
 ---
 
@@ -208,14 +233,16 @@ If `gh` is not authenticated, tell the user: `! gh auth login`
 
 ## Step 6: Deploy to Vercel
 
+**Option A — Vercel CLI (default):**
 ```bash
-# Link and deploy
 npx vercel --yes
 npx vercel --prod --yes
 ```
-
 If the CLI is not installed: `npm i -g vercel`
 If not authenticated: `npx vercel login`
+
+**Option B — Vercel MCP (alternative if CLI unavailable):**
+Use the `deploy_to_vercel` tool from the Vercel MCP server. Pass the project directory path and set the target to `production`.
 
 Save the production URL — you'll need it for Step 7.
 
@@ -223,7 +250,13 @@ Save the production URL — you'll need it for Step 7.
 
 ## Step 7: Capture to Figma
 
-Use `generate_figma_design` (Figma MCP) with the production Vercel URL to create a pixel-perfect capture in the user's Figma file.
+**Load the `figma-use` skill before this step** — it is required before any `use_figma` MCP call.
+
+Use `get_screenshot` (Figma MCP) with the production Vercel URL to take a visual snapshot of the live site. Then use `use_figma` to paste it into the user's Figma file as a new frame.
+
+> **Choosing the right tool:**
+> - `get_screenshot` — captures a visual image of the live page. Rate-limit-friendly. Use this for a reference snapshot.
+> - `generate_figma_design` — generates an editable Figma frame from the production URL. Counts against your monthly Figma MCP quota. Use this if the user needs an editable result.
 
 Target file: use the same Figma file as the styling guide, or create a new one.
 
@@ -238,6 +271,8 @@ After capture, confirm the node ID of the captured frame — save it for future 
 Create this script that reads Figma Local Variables and patches `app/globals.css`:
 
 ```js
+const fs = require("fs");
+
 const FIGMA_FILE_KEY = "REPLACE_WITH_ACTUAL_FILE_KEY";
 const FIGMA_TOKEN = process.env.FIGMA_TOKEN;
 
@@ -254,6 +289,8 @@ function hexFromRgba({ r, g, b }) {
 }
 
 async function main() {
+  if (!FIGMA_TOKEN) throw new Error("FIGMA_TOKEN env variable is not set");
+
   const data = await fetchFigma(`/files/${FIGMA_FILE_KEY}/variables/local`);
   const variables = Object.values(data.meta?.variables ?? {});
   const modes = Object.values(data.meta?.variableCollections ?? {})
@@ -281,7 +318,6 @@ async function main() {
     }
   }
 
-  const fs = await import("fs");
   let css = fs.readFileSync("app/globals.css", "utf8");
   for (const [key, value] of Object.entries(tokens)) {
     if (!value) continue;
@@ -334,7 +370,7 @@ jobs:
             git add app/globals.css &&
             git commit -m "${{ github.event.inputs.message }}"
           )
-      - uses: ad-m/github-push-action@master
+      - uses: ad-m/github-push-action@v0.8.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
@@ -381,3 +417,9 @@ The GitHub MCP PAT often lacks `repo:create` scope. The `gh` CLI uses the user's
 
 **Why `workflow_dispatch` for the GitHub Action?**
 Gives the user deliberate control. They can also just say "sync and deploy" in this chat — I'll run the sync script locally, commit, and push, which triggers Vercel's automatic build.
+
+**Why `get_screenshot` for Figma capture instead of `generate_figma_design`?**
+`get_screenshot` is rate-limit-friendly and does not consume your monthly Figma MCP write quota. Use `generate_figma_design` when you need an editable Figma frame; use `get_screenshot` when you need a reference snapshot.
+
+**Why `require("fs")` instead of dynamic `import("fs")`?**
+Next.js projects use CommonJS for scripts by default (no `"type": "module"` in package.json). `require` works without any extra config; the dynamic `import()` form adds unnecessary async complexity for no benefit.
