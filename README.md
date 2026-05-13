@@ -100,6 +100,29 @@ git --version    # any recent version
 
 ---
 
+## Want to Clone a Competitor's Site Instead?
+
+If you already have a live URL you want to replicate pixel-perfectly — including animations, scroll effects, hover states, and interactions — use the **`/clone-website`** workflow instead.
+
+```
+/clone-website https://www.competitor.com
+```
+
+This is a separate pipeline that uses browser automation to inspect the live site, extract exact CSS values via `getComputedStyle()`, and dispatch parallel builder agents to reconstruct every section.
+
+**Read the full guide:** [clone-website.md](./clone-website.md)
+
+| | `/build-website` | `/clone-website` |
+|---|---|---|
+| **Starting point** | Your brief + Figma design | A live URL |
+| **Output** | New site from your design | Pixel-perfect replica |
+| **Animations** | What you design | Cloned exactly from source |
+| **Browser needed** | No | Yes (`claude --chrome`) |
+| **Node.js required** | 18+ | 24+ |
+| **Best model** | Sonnet | Opus 4.7 |
+
+---
+
 ## Preflight Check
 
 Run these before starting to avoid failures mid-way:
@@ -253,6 +276,7 @@ Every site built with this skill uses:
 - Requires the five prerequisites above. If your org blocks GitHub CLI or Vercel, the deploy steps will need manual intervention.
 - Image assets in Figma are not synced to code (only color tokens and spacing values).
 - The Figma capture in Step 7 uses `get_screenshot` — it captures a visual snapshot, not an editable component tree.
+- Does **not** clone existing sites. For that, use the `/clone-website` workflow — see [clone-website.md](./clone-website.md).
 
 ---
 
